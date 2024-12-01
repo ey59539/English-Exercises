@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous Speech Recognition Vocabulary Exercise</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        .target-word { font-size: 24px; margin: 20px 0; }
+        .result { font-size: 20px; color: green; margin-top: 20px; }
+        button { padding: 10px 20px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <h1>Vocabulary Pronunciation Exercise</h1>
+    <p>Say a sentence using this word:</p>
+    <p class="target-word" id="target-word"></p>
+    <p id="recognized-word" class="result"></p>
+    <p id="compliment" class="result" style="color: blue;"></p>
+
+    <script>
+        const wordList = [
+           "a", "b", "c", "d", "e",
+            "f", "g", "h", "i", "j", "k",
+            "l", "m", "n", "o", "p",
+            "q", "r", "s", "t", "u", "v", "w", "x",
+            "y", "z"
+        ];
+
+        const compliments = [
+            "Doğru söyledin!", "İşte bu!", "Harika!", "Doğru yoldasın!", "Bu iş böyle yapılır!", "Telaffuz uzmanı seni!"
+        ];
+
+        let targetWord = '';
+        
+        // Rastgele bir kelime seç ve ekrana yaz
+        function setRandomWord() {
+            const randomIndex = Math.floor(Math.random() * wordList.length);
+            targetWord = wordList[randomIndex];
+            document.getElementById('target-word').innerText = targetWord;
+        }
+
+        // Övgü mesajlarından birini rastgele seç
+        function getRandomCompliment() {
+            const randomIndex = Math.floor(Math.random() * compliments.length);
+            return compliments[randomIndex];
+        }
+
+        // Ses tanıma fonksiyonu
+        function startRecognition() {
+            setRandomWord();  // Başlangıç kelimesi belirle
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "en-US";
+            recognition.continuous = true;  // Sürekli dinleme modu
+
+            recognition.onresult = (event) => {
+                const spokenText = event.results[event.results.length - 1][0].transcript.toLowerCase();
+                const resultElement = document.getElementById('recognized-word');
+                const complimentElement = document.getElementById('compliment');
+
+                if (spokenText.includes(targetWord.toLowerCase())) {
+                    resultElement.innerText = `Correct! You said: "${targetWord}"`;
+                    complimentElement.innerText = getRandomCompliment();
+                    resultElement.style.color = "green";
+
+                    setRandomWord();  // Doğru cevap verildiyse yeni bir kelime seç
+                } else {
+                    resultElement.innerText = `Try again! You said: "${spokenText}"`;
+                    complimentElement.innerText = "";  // Yanlış cevapta övgü verilmez
+                    resultElement.style.color = "red";
+                }
+            };
+
+            recognition.onerror = (event) => {
+                alert("Error occurred in recognition: " + event.error);
+            };
+
+            recognition.start();
+        }
+
+        // Sayfa yüklendiğinde otomatik başlat
+        window.onload = startRecognition;
+    </script>
+</body>
+</html>
