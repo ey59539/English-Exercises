@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Speaking Quiz</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        .question { font-size: 24px; margin: 20px 0; }
+        .result { font-size: 20px; margin-top: 10px; }
+        .positive { color: green; }
+        .negative { color: red; }
+        button { padding: 10px 20px; font-size: 16px; margin-top: 20px; }
+        #summary { text-align: left; margin: 30px auto; width: 80%; font-size: 18px; display: none; }
+        #summary h2 { text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>Speaking Quiz</h1>
+    <p class="question" id="question"></p>
+    <p id="feedback" class="result"></p>
+    <button id="start-button">Start</button>
+    <p id="score" class="result"></p>
+    <div id="summary"></div>
+
+    <script>
+        const questions = [
+            "What is your name?",
+            "How do you spell your name?",
+            "What is your surname?",
+            "How do you spell your surname?",
+            "How old are you?",
+            "Are you a student?",
+            "What is your mobile phone number?",
+            "Where are you from?",
+            "What nationality are you?",
+            "What language do you speak?"
+        ];
+
+        const expectedAnswers = [
+            answer => answer.trim().split(" ").length === 1, // Name
+            answer => /^[a-z\s]+$/i.test(answer.trim()), // Spelling name
+            answer => answer.trim().split(" ").length === 1, // Surname
+            answer => /^[a-z\s]+$/i.test(answer.trim()), // Spelling surname
+            answer => /\d+/.test(answer), // Age
+            answer => /yes|no|student/i.test(answer), // Student status
+            answer => /\d{10}/.test(answer), // Phone number
+            answer => answer.trim().length > 1, // From where
+            answer => answer.trim().length > 1, // Nationality
+            answer => /english|spanish|turkish|french|german/i.test(answer) // Language
+        ];
+
+        const possibleAnswers = [
+            "John, Mary, etc.",
+            "J-O-H-N or M-A-R-Y",
+            "Smith, Doe, etc.",
+            "S-M-I-T-H or D-O-E",
+            "25, 30, etc.",
+            "Yes or No",
+            "1234567890",
+            "London, New York, etc.",
+            "British, American, etc.",
+            "English, Spanish, etc."
+        ];
+
+        const compliments = [
+            "Great job!", "Well done!", "You're doing amazing!", "Excellent!", "Keep it up!"
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const userResponses = [];
+
+        function getRandomCompliment() {
+            return compliments[Math.floor(Math.random() * compliments.length)];
+        }
+
+        function showNextQuestion() {
+            if (currentQuestionIndex < questions.length) {
+                document.getElementById('question').innerText = questions[currentQuestionIndex];
+                document.getElementById('feedback').innerText = '';
+            } else {
+                document.getElementById('score').innerHTML = `Quiz finished! Your score: ${score}/10<br>`;
+                presentSummary();
+            }
+        }
+
+        function presentSummary() {
+            let resultText = "<h2>Quiz Summary</h2>";
+            questions.forEach((q, index) => {
+                const userAnswer = userResponses[index] || "No Answer";
+                const correctAnswer = possibleAnswers[index];
+                resultText += `
+                    <p><strong>${q}</strong></p>
+                    <p>User's Answer: ${userAnswer}</p>
+                    <p>Possible Correct Answer: ${correctAnswer}</p>
+                    <hr>`;
+            });
+            document.getElementById('summary').innerHTML = resultText;
+            document.getElementById('summary').style.display = 'block'; // Ensure it is visible.
+        }
+
+        function startRecognition() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "en-US";
+            recognition.continuous = true;
+
+            recognition.onresult = (event) => {
+                const spokenText = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+                userResponses[currentQuestionIndex] = spokenText;
+
+                if (expectedAnswers[currentQuestionIndex](spokenText)) {
+                    document.getElementById('feedback').innerText = getRandomCompliment();
+                    document.getElementById('feedback').className = 'result positive';
+                    score++;
+                } else {
+                    document.getElementById('feedback').innerText = "Not quite right.";
+                    document.getElementById('feedback').className = 'result negative';
+                }
+
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    showNextQuestion();
+                } else {
+                    recognition.stop();
+                }
+            };
+
+            recognition.onerror = (event) => {
+                alert("Error occurred in recognition: " + event.error);
+            };
+
+            recognition.start();
+            showNextQuestion();
+        }
+
+        document.getElementById('start-button').onclick = () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            userResponses.length = 0; // Clear previous responses
+            document.getElementById('score').innerText = '';
+            document.getElementById('summary').innerHTML = '';
+            document.getElementById('summary').style.display = 'none'; // Hide initially.
+            startRecognition();
+        };
+    </script>
+</body>
+</html>
